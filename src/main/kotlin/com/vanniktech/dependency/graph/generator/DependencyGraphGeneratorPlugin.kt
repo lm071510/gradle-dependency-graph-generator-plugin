@@ -13,10 +13,18 @@ open class DependencyGraphGeneratorPlugin : Plugin<Project> {
       extension.generators.forEach {
         project.tasks.register(it.gradleTaskName, DependencyGraphGeneratorTask::class.java, it.configureTask(project))
       }
+
+      extension.projectGenerators.forEach {
+        project.tasks.register(it.gradleTaskName, ProjectDependencyGraphGeneratorTask::class.java, it.configureTask(project))
+      }
     } else {
       project.afterEvaluate { _ ->
         extension.generators.forEach {
           project.tasks.create(it.gradleTaskName, DependencyGraphGeneratorTask::class.java, it.configureTask(project))
+        }
+
+        extension.projectGenerators.forEach {
+          project.tasks.create(it.gradleTaskName, ProjectDependencyGraphGeneratorTask::class.java, it.configureTask(project))
         }
       }
     }
@@ -31,6 +39,18 @@ open class DependencyGraphGeneratorPlugin : Plugin<Project> {
       it.description = "Generates a dependency graph$name"
       it.inputFile = project.buildFile
       it.outputDirectory = File(project.buildDir, "reports/dependency-graph/")
+    }
+  }
+
+  private fun DependencyGraphGeneratorExtension.ProjectGenerator.configureTask(project: Project): (ProjectDependencyGraphGeneratorTask) -> Unit {
+    val name = name.nonEmptyPrepend(" for ")
+
+    return {
+      it.projectGenerator = this
+      it.group = "reporting"
+      it.description = "Generates a project dependency graph$name"
+      it.inputFile = project.buildFile
+      it.outputDirectory = File(project.buildDir, "reports/project-dependency-graph/")
     }
   }
 }
